@@ -6,27 +6,21 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/ebook-reader}
-    depends_on:
-      - mongo
+      - MONGODB_URI=mongodb+srv://subham:msubham193@cluster0.4mgmmad.mongodb.net/ebook-reader?retryWrites=true&w=majority
     restart: unless-stopped
     networks:
       - app-network
 
-  mongo:
-    image: mongo:6
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-    restart: unless-stopped
-    networks:
-      - app-network
-    environment:
-      - MONGO_INITDB_DATABASE=ebook-reader
+  # Remove the mongo service since you're using MongoDB Atlas
+  # mongo:
+  #   image: mongo:6
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo-data:/data/db
 
-volumes:
-  mongo-data:
+# volumes:
+#   mongo-data:
 
 networks:
   app-network:
