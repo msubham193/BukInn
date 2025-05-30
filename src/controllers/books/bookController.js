@@ -1,8 +1,9 @@
 const Book = require("../../models/Book");
 const Author = require("../../models/Author");
 const { responseHandler } = require("../../utils/responseHandler");
-const { CustomError } = require("../../utils/errorHandler");
+const CustomError = require("../../utils/errors");
 const winston = require("../../config/logger");
+const { deleteImageFromS3 } = require("../../config/s3Config");
 
 // Get paginated list of published books
 const getBooks = async (req, res, next) => {
@@ -106,7 +107,7 @@ const searchBooks = async (req, res, next) => {
     }
     if (author) {
       const authorDoc = await Author.findOne({
-        name: new RegExp(`^${q}$`, "i"),
+        name: new RegExp(`^${author}$`, "i"),
       });
       if (authorDoc) {
         query.author = authorDoc._id;
@@ -216,10 +217,29 @@ const getSuggestions = async (req, res, next) => {
   }
 };
 
-// Create book (admin only)
+// Create book (admin only) - Updated with S3 upload
 const createBook = async (req, res, next) => {
   try {
     const bookData = req.body;
+
+    // If cover image was uploaded, add the S3 URL to book data
+    if (req.file) {
+      bookData.coverImage = req.file.location;
+      winston.info(`Cover image uploaded to S3: ${req.file.location}`);
+    }
+
+    // Validate required fields
+    const requiredFields = ["title", "description"];
+    for (const field of requiredFields) {
+      if (!bookData[field]) {
+        // If validation fails and image was uploaded, clean up S3
+        if (req.file) {
+          await deleteImageFromS3(req.file.location);
+        }
+        throw new CustomError(`${field} is required`, 400);
+      }
+    }
+
     const book = new Book(bookData);
     await book.save();
 
@@ -228,33 +248,63 @@ const createBook = async (req, res, next) => {
     );
     return responseHandler(res, 201, { book }, "Book created successfully");
   } catch (error) {
+    // Clean up uploaded image if book creation fails
+    if (req.file) {
+      await deleteImageFromS3(req.file.location);
+      winston.info(`Cleaned up uploaded image due to book creation failure`);
+    }
     winston.error("Error creating book:", error);
     next(error);
   }
 };
 
-// Update book (admin only)
+// Update book (admin only) - Updated with S3 upload
 const updateBook = async (req, res, next) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
+      // Clean up uploaded image if book not found
+      if (req.file) {
+        await deleteImageFromS3(req.file.location);
+      }
       throw new CustomError("Book not found", 404);
     }
 
-    Object.assign(book, req.body);
+    const updateData = req.body;
+    const oldCoverImage = book.coverImage;
+
+    // If new cover image was uploaded
+    if (req.file) {
+      updateData.coverImage = req.file.location;
+      winston.info(`New cover image uploaded: ${req.file.location}`);
+    }
+
+    // Update book
+    Object.assign(book, updateData);
     await book.save();
+
+    // Delete old cover image from S3 if new one was uploaded
+    if (req.file && oldCoverImage) {
+      await deleteImageFromS3(oldCoverImage);
+      winston.info(`Deleted old cover image: ${oldCoverImage}`);
+    }
 
     winston.info(
       `Book updated: ${book.title} by admin: ${req.user.phoneNumber}`
     );
     return responseHandler(res, 200, { book }, "Book updated successfully");
   } catch (error) {
+    // Clean up new uploaded image if update fails
+    if (req.file) {
+      await deleteImageFromS3(req.file.location);
+      winston.info(`Cleaned up uploaded image due to book update failure`);
+    }
     winston.error("Error updating book:", error);
     next(error);
   }
 };
 
-// Delete book (admin only)
+// Delete book (admin only) - Updated with S3 cleanup
 const deleteBook = async (req, res, next) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -262,7 +312,17 @@ const deleteBook = async (req, res, next) => {
       throw new CustomError("Book not found", 404);
     }
 
+    const coverImageUrl = book.coverImage;
+
+    // Delete book from database
     await book.deleteOne();
+
+    // Delete cover image from S3
+    if (coverImageUrl) {
+      await deleteImageFromS3(coverImageUrl);
+      winston.info(`Deleted cover image: ${coverImageUrl}`);
+    }
+
     winston.info(
       `Book deleted: ${book.title} by admin: ${req.user.phoneNumber}`
     );

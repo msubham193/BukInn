@@ -47,7 +47,7 @@ const bookSchema = new mongoose.Schema(
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Author",
-      required: [true, "Author is required"],
+      // required: [true, "Author is required"],
     },
     categories: [
       {

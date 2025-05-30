@@ -5,6 +5,8 @@ const bookValidator = require("../../../validators/bookvalidator");
 const { authMiddleware } = require("../../../middleware/auth");
 const { adminMiddleware } = require("../../../middleware/admin");
 const { validationMiddleware } = require("../../../middleware/validation");
+// Import the S3 upload configuration instead of basic multer
+const { upload } = require("../../../config/s3Config");
 
 // Public routes
 router.get(
@@ -52,6 +54,7 @@ router.post(
   "/",
   authMiddleware,
   adminMiddleware,
+  upload.single("coverImage"), // Now using the S3 configured upload
   bookValidator.createBook,
   validationMiddleware,
   bookController.createBook
@@ -60,6 +63,7 @@ router.put(
   "/:id",
   authMiddleware,
   adminMiddleware,
+  upload.single("coverImage"), // Now using the S3 configured upload
   bookValidator.updateBook,
   validationMiddleware,
   bookController.updateBook
