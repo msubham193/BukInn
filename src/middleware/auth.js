@@ -1,5 +1,5 @@
 const { verifyAccessToken } = require("../services/auth/jwtService");
-const { CustomError } = require("../utils/errorHandler");
+const CustomError = require("../utils/errors");
 const winston = require("../config/logger");
 
 const authMiddleware = async (req, res, next) => {

@@ -1,7 +1,7 @@
 const Author = require("../../models/Author");
 const Book = require("../../models/Book");
 const { responseHandler } = require("../../utils/responseHandler");
-const { CustomError } = require("../../utils/errors");
+const CustomError = require("../../utils/errors");
 const winston = require("../../config/logger");
 const { deleteImageFromS3 } = require("../../config/s3Config");
 

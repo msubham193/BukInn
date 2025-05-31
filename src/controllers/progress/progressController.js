@@ -1,7 +1,7 @@
 const Progress = require("../../models/Progress");
 const Book = require("../../models/Book");
 const { responseHandler } = require("../../utils/responseHandler");
-const { CustomError } = require("../../utils/errorHandler");
+const CustomError = require("../../utils/errors");
 const winston = require("../../config/logger");
 
 // Update reading progress

@@ -1,7 +1,7 @@
 const Category = require("../../models/Category");
 const Book = require("../../models/Book");
 const { responseHandler } = require("../../utils/responseHandler");
-const { CustomError } = require("../../utils/errorHandler");
+const  CustomError  = require("../../utils/errors");
 const winston = require("../../config/logger");
 
 // Get paginated list of categories
