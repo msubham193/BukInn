@@ -111,9 +111,9 @@ const schemas = {
       description: Joi.string().max(1000).optional().allow("").messages({
         "string.max": "Description cannot exceed 1000 characters",
       }),
-      // author: objectId.required().messages({
-      //   "any.required": "Author ID is required",
-      // }),
+      author: objectId.required().messages({
+        "any.required": "Author ID is required",
+      }),
       categories: Joi.array().items(objectId).optional().messages({
         "array.includes": "Each category must be a valid MongoDB ObjectId",
       }),

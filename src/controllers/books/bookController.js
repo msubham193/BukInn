@@ -34,6 +34,7 @@ const getBooks = async (req, res, next) => {
 
     const total = await Book.countDocuments(query);
 
+    console.log(books);
     winston.info(`Retrieved ${books.length} books for page ${page}`);
     return responseHandler(res, 200, {
       books,
